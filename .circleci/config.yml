@@ -12,7 +12,15 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
           POSTGRES_DB: challenge
-    working_directory: ~/project/backend
+          DATABASE_HOST: 0.0.0.0
+          DATABASE_PORT: 5432
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
+          DATABASE_NAME: usersdb_test
+          DATABASE_SYNC: true
+          POKEMON_API_URL: https://pokeapi.co/api/v2
+          COVERALLS_REPO_TOKEN: gLskLgZ58OYgHYPem2MLSnox65zICVe8t
+    working_directory: ~/project
     steps:
       - checkout
       - run:
@@ -23,6 +31,8 @@ jobs:
       - python/install-packages:
           pkg-manager: poetry
           app-dir: ~/project/backend
+          # Disable cache checksum error fallback if needed:
+          # include-locked-files: true
       - run:
           name: Wait for Postgres
           command: |
@@ -34,6 +44,7 @@ jobs:
           name: Run tests
           command: |
             export DATABASE_URL="postgresql://user:password@127.0.0.1:5432/challenge"
+            cd backend
             poetry run pytest -vv --disable-warnings
 
 workflows:
