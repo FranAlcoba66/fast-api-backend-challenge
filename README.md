@@ -39,6 +39,7 @@ backend/
 - CORS Support
 - Environment Configuration
 - API Documentation (Swagger UI)
+ - CI with CircleCI (build + tests)
 
 ## Prerequisites
 
@@ -46,7 +47,7 @@ backend/
 - Python 3.13 or higher
 - Poetry (Python package manager)
 
-## Getting Started
+## Getting Started (Local)
 
 1. **Clone the repository**
 
@@ -55,15 +56,40 @@ git clone <repository-url>
 cd Challenge
 ```
 
-2. **Environment Setup**
+2. **Environment Setup (.env)**
 
 Create a `.env` file in the `backend` directory with the following variables:
 
 ```env
+APP_NAME=Challenge
+APP_ENV=local
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8000
+
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=challenge
+
+# SQLAlchemy URL used by the app
 DATABASE_URL=postgresql://user:password@db:5432/challenge
+
+PROJECT_NAME=Challenge API
+VERSION=0.1.0
+API_V1_STR=/api/v1
+
+SECRET_KEY=dev-secret
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+DB_POOL_SIZE=5
+DB_MAX_OVERFLOW=10
+DB_POOL_TIMEOUT=30
+DB_POOL_RECYCLE=1800
+
+POKEMON_API_URL=https://pokeapi.co/api/v2
 ```
 
-3. **Start the Application**
+3. **Start the Application (Docker)**
 
 ```bash
 docker-compose up -d
@@ -81,11 +107,21 @@ This will start:
 ## Development
 
 ### Running Tests
+You can run tests in two formas:
 
+1) Directamente con Poetry (requiere Postgres corriendo):
 ```bash
-docker-compose --profile testing up -d test_db
-poetry run pytest
+cd backend
+poetry install
+export DATABASE_URL="postgresql://user:password@localhost:5432/challenge"
+poetry run pytest -vv --disable-warnings
 ```
+
+2) Usando Docker Compose de tests:
+```bash
+docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from tests
+```
+Esto levantará un Postgres y ejecutará `pytest` dentro de un contenedor con Poetry.
 
 ### Database Migrations
 
@@ -97,10 +133,36 @@ alembic revision --autogenerate -m "description"
 alembic upgrade head
 ```
 
+### Running the API locally (hot-reload)
+Dentro del contenedor, el backend usa Uvicorn con `--reload`:
+```bash
+docker-compose up -d
+# logs
+docker-compose logs -f api
+```
+Para desarrollo sin Docker:
+```bash
+cd backend
+poetry install
+poetry run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+## Continuous Integration (CircleCI)
+- El pipeline en `/.circleci/config.yml` usa el orb oficial de Python para:
+  - Instalar dependencias con Poetry.
+  - Levantar Postgres como servicio.
+  - Ejecutar `pytest` apuntando a Postgres.
+- Badge de estado al inicio del README.
+- Documentación oficial de referencia: `https://circleci.com/docs/guides/getting-started/language-python/`
+
 ## API Endpoints
 
 - `GET /`: Health check endpoint
 - `GET /api/v1/users`: User-related endpoints
+- `POST /api/v1/users/`
+- `GET /api/v1/users/{user_id}`
+- `PUT /api/v1/users/{user_id}`
+- `DELETE /api/v1/users/{user_id}`
 
 ## Contributing
 
