@@ -31,9 +31,9 @@ class UserResponseDb(BaseModel):
 
 class UserResponse(BaseModel):
     """Output DTO: Esquema de respuesta para un usuario."""
-    # id: int
+    id: int
     name: str
-    # email: str
+    email: str
     pokemon_ids: List[int]
     pokemons: List[PokemonInfo] = []
 

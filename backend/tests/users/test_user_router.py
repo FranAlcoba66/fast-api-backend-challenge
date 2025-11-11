@@ -30,7 +30,7 @@ def mock_user_service():
 # 🔹 TestClient síncrono
 @pytest.fixture
 def client(mock_user_service):
-    # Reemplazar la dependencia get_user_service con la fixture
+
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
     return TestClient(app)
 
