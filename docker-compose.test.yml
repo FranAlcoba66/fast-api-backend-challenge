@@ -1,7 +1,9 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:14
-    container_name: challenge_db
+    container_name: challenge_db_test
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -11,23 +13,20 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  api:
+  tests:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: challenge_api
-    env_file:
-      - ./backend/.env
+    container_name: challenge_tests_runner
     depends_on:
       - db
-    ports:
-      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql://user:password@db:5432/challenge"
+    working_dir: /app
     volumes:
       - ./backend:/app
-    working_dir: /app
-    command: ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    restart: unless-stopped
+    command: ["poetry", "run", "pytest", "-vv", "--disable-warnings"]
+    restart: "no"
 
 volumes:
   pgdata:
-  test_pgdata:

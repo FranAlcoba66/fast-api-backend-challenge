@@ -12,7 +12,7 @@ router = APIRouter()
 
 def get_user_service() -> UserService:
     return UserService(repository=UserRepository())
-
+    
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user_endpoint(

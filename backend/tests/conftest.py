@@ -1,40 +1,80 @@
+import os
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 from app.core.base import Base
-from app.modules.user.models import User
 
-# 📌 URL de base de datos de prueba (SQLite en memoria)
-TEST_DATABASE_URL = "postgresql+psycopg2://test_user:test_password@test_db:5432/test_challenge"
+# Cargar variables de entorno
+load_dotenv()
 
+POSTGRES_USER = os.getenv("POSTGRES_USER", "user")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
+TEST_DATABASE_NAME = os.getenv("TEST_DATABASE_NAME", "test_challenge")
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/{TEST_DATABASE_NAME}",
+)
 
-# 🛠️ Engine y Session
-engine = create_engine(TEST_DATABASE_URL)
-TestingSessionLocal = sessionmaker(bind=engine)
+# Flag de debug para DBeaver
+DEBUG_DB = os.getenv("DEBUG_TEST_DB", "true").lower() == "true"
 
-# ---------------------------------------------------------
-# 🏗️  SETUP GLOBAL - se ejecuta una sola vez antes de todos los tests
-# 🧼  CLEAN GLOBAL - se ejecuta al final de toda la suite de tests
-# ---------------------------------------------------------
+# Conexión administrativa a postgres
+ADMIN_DATABASE_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/postgres"
+
+# Engines y sessionmaker
+admin_engine = create_engine(ADMIN_DATABASE_URL, isolation_level="AUTOCOMMIT")
+test_engine = create_engine(TEST_DATABASE_URL)
+TestingSessionLocal = sessionmaker(bind=test_engine)
+
+# -----------------------------
+# Fixture global de la DB de test
+# -----------------------------
 @pytest.fixture(scope="session", autouse=True)
 def _global_test_database():
-    """Crea la estructura de la DB de prueba antes de toda la suite."""
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+    """Crea la base y las tablas automáticamente si no existen, mantiene visibilidad para debug."""
+    with admin_engine.connect() as conn:
 
-# ---------------------------------------------------------
-# 🧪  SETUP / CLEAN POR TEST
-# ---------------------------------------------------------
+        exists = conn.execute(
+            text(f"SELECT 1 FROM pg_database WHERE datname = :db"), {"db": TEST_DATABASE_NAME}
+        ).scalar()
+
+        if not exists:
+            print(f"🧱 Creando base de datos de test: {TEST_DATABASE_NAME}")
+            conn.execute(
+                text(f'CREATE DATABASE "{TEST_DATABASE_NAME}" OWNER "{POSTGRES_USER}"')
+            )
+
+    print("🧱 Creando tablas del modelo en la base de test...")
+    Base.metadata.create_all(bind=test_engine)
+    yield
+    if not DEBUG_DB:
+        Base.metadata.drop_all(bind=test_engine)
+        print("🧹 Base de datos de test limpiada")
+    else:
+        print("🧹 Base de test visible para DBeaver")
+
+# -----------------------------
+# Fixture por test
+# -----------------------------
 @pytest.fixture(scope="function")
 def db_session():
-    """Sesión de DB limpia por test usando transacción."""
-    connection = engine.connect()
+    """Sesión limpia por test usando transacciones, con impresión de la DB actual."""
+    print(f"🧪 Usando base de datos de test: {TEST_DATABASE_URL}")
+    connection = test_engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
+
+    # Mostrar la base actual dentro del test
+    current_db = session.execute(text("SELECT current_database();")).scalar()
+    print(f"💾 Test ejecutando en la DB: {current_db}")
+
     try:
         yield session
+        if not DEBUG_DB:
+            transaction.rollback()
+        else:
+            print("🧪 DEBUG MODE: transacciones no se revierten, datos visibles")
     finally:
         session.close()
-        transaction.rollback()
         connection.close()
