@@ -1,3 +1,6 @@
 # Python
 __pycache__/
 backend/.coverage
+.circleci/config.yml
+backend/.env
+backend/coverage.xml

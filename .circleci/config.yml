@@ -6,6 +6,7 @@ orbs:
 
 jobs:
   build_and_test:
+
     docker:
       - image: cimg/python:3.13
         environment:
@@ -22,10 +23,10 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
           POSTGRES_DB: challenge
-          
     working_directory: ~/project
     steps:
       - checkout
+      # ... (Other setup steps remain the same) ...
       - run:
           name: Map service hostname 'db' to localhost
           command: |
@@ -38,8 +39,6 @@ jobs:
       - python/install-packages:
           pkg-manager: poetry
           app-dir: ~/project/backend
-          # Disable cache checksum error fallback if needed:
-          # include-locked-files: true
       - run:
           name: Wait for Postgres
           command: |
@@ -59,7 +58,11 @@ jobs:
           flag_name: "python-tests"
           verbose: true
 
+# ----------------------------------------------------------------------
 workflows:
   build_test:
     jobs:
       - build_and_test
+      - coveralls/finish:
+          requires:
+            - build_and_test
