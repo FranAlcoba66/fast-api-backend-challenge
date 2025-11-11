@@ -22,6 +22,7 @@ jobs:
             sudo apt-get install -y postgresql-client
       - python/install-packages:
           pkg-manager: poetry
+          app-dir: ~/project/backend
       - run:
           name: Wait for Postgres
           command: |
