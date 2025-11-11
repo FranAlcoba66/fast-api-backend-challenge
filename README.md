@@ -1,3 +1,5 @@
+ [![CircleCI](https://dl.circleci.com/status-badge/img/circleci/519hynSWEPShqqHZR5AauT/KaqAvU5nFL3tjPFFfXZuur/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/519hynSWEPShqqHZR5AauT/KaqAvU5nFL3tjPFFfXZuur/tree/main)
+
 # FastAPI Clean Architecture Challenge
 
 This project is a FastAPI application built with clean architecture principles, featuring user management and PostgreSQL database integration.
