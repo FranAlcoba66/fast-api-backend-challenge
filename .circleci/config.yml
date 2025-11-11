@@ -1,0 +1,41 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@2.0.3
+
+jobs:
+  build_and_test:
+    docker:
+      - image: cimg/python:3.13
+      - image: cimg/postgres:14.11
+        environment:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: challenge
+    working_directory: ~/project/backend
+    steps:
+      - checkout
+      - run:
+          name: Install Postgres client
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+      - python/install-packages:
+          pkg-manager: poetry
+      - run:
+          name: Wait for Postgres
+          command: |
+            for i in {1..60}; do
+              pg_isready -h 127.0.0.1 -p 5432 -U user && break
+              sleep 2
+            done
+      - run:
+          name: Run tests
+          command: |
+            export DATABASE_URL="postgresql://user:password@127.0.0.1:5432/challenge"
+            poetry run pytest -vv --disable-warnings
+
+workflows:
+  build_test:
+    jobs:
+      - build_and_test
