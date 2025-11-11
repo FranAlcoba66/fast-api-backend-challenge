@@ -49,11 +49,11 @@ jobs:
             export DATABASE_URL="postgresql://user:password@127.0.0.1:5432/challenge"
             cd backend
             poetry run pytest -vv --disable-warnings --cov=app --cov-report=xml
-      - run:
-          name: Upload coverage to Coveralls
-          command: |
-            cd backend
-            poetry run coveralls --service=circleci
+      - coveralls/upload:
+          coverage_file: backend/coverage.xml
+          parallel: true
+          flag_name: "python-tests"
+          verbose: true
 
 workflows:
   build_test:
