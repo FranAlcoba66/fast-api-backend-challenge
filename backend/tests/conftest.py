@@ -5,24 +5,16 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from app.core.base import Base
 
-# Cargar variables de entorno
 load_dotenv()
 
-POSTGRES_USER = os.getenv("POSTGRES_USER", "user")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
-TEST_DATABASE_NAME = os.getenv("TEST_DATABASE_NAME", "test_challenge")
-TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/{TEST_DATABASE_NAME}",
-)
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+TEST_DATABASE_NAME = os.getenv("TEST_DATABASE_NAME")
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+ADMIN_DATABASE_URL = os.getenv("ADMIN_DATABASE_URL")
+DEBUG_DB = os.getenv("DEBUG_TEST_DB", "false").lower() == "true"
 
-# Flag de debug para DBeaver
-DEBUG_DB = os.getenv("DEBUG_TEST_DB", "true").lower() == "true"
 
-# Conexión administrativa a postgres
-ADMIN_DATABASE_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/postgres"
-
-# Engines y sessionmaker
 admin_engine = create_engine(ADMIN_DATABASE_URL, isolation_level="AUTOCOMMIT")
 test_engine = create_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(bind=test_engine)

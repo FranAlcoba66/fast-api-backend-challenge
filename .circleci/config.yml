@@ -6,60 +6,83 @@ orbs:
 
 jobs:
   build_and_test:
-
     docker:
       - image: cimg/python:3.13
         environment:
+          # App / DB config
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
           POSTGRES_DB: challenge
-          DATABASE_HOST: 0.0.0.0
+          DATABASE_HOST: 127.0.0.1
           DATABASE_PORT: 5432
           DATABASE_SYNC: true
+          APP_ENV: test
+          APP_NAME: challenge-api
+          PROJECT_NAME: Challenge API
+          VERSION: 1.0.0
+          API_V1_STR: /api/v1
+
+          # Test DB config
+          TEST_DATABASE_NAME: test_challenge
+          TEST_DATABASE_URL: postgresql+psycopg2://user:password@127.0.0.1:5432/test_challenge
+          DEBUG_TEST_DB: false
+          ADMIN_DATABASE_URL: postgresql+psycopg2://user:password@127.0.0.1:5432/postgres
+
+          # Extra APIs / tokens
           POKEMON_API_URL: https://pokeapi.co/api/v2
           COVERALLS_REPO_TOKEN: vVAWEUVXyNEVncvV4QjLH28uwyWKE8TC8
+
       - image: cimg/postgres:14.11
         environment:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
           POSTGRES_DB: challenge
+
     working_directory: ~/project
+
     steps:
       - checkout
+
       - run:
-          name: Map service hostname 'db' to localhost
+          name: 🗺️ Map hostname 'db' a localhost
           command: |
             echo "127.0.0.1 db" | sudo tee -a /etc/hosts
+
       - run:
-          name: Install Postgres client
+          name: 🧰 Instalar cliente PostgreSQL
           command: |
             sudo apt-get update
             sudo apt-get install -y postgresql-client
+
       - python/install-packages:
           pkg-manager: poetry
           app-dir: ~/project/backend
+
       - run:
-          name: Wait for Postgres
+          name: ⏳ Esperar a que Postgres esté listo
           command: |
             for i in {1..60}; do
               pg_isready -h 127.0.0.1 -p 5432 -U user && break
               sleep 2
             done
+
       - run:
-          name: Run tests
+          name: 🧪 Ejecutar tests con coverage
           command: |
-            export DATABASE_URL="postgresql://user:password@127.0.0.1:5432/challenge"
             cd backend
+            export DATABASE_URL="postgresql+psycopg2://user:password@127.0.0.1:5432/challenge"
             poetry run pytest -vv --disable-warnings --cov=app --cov-report=xml --cov-report=term
+
       - run:
-          name: Verify coverage file exists
+          name: ✅ Verificar coverage.xml
           command: |
             if [ ! -f backend/coverage.xml ]; then
-              echo "Error: coverage.xml not found!"
+              echo "❌ Error: coverage.xml no encontrado"
               exit 1
             fi
-            echo "Coverage file found at backend/coverage.xml"
+            echo "✅ Coverage file encontrado: backend/coverage.xml"
             ls -lh backend/coverage.xml
+
       - coveralls/upload:
           coverage_file: backend/coverage.xml
           flag_name: "python-tests"
