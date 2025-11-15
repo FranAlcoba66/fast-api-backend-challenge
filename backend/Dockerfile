@@ -23,18 +23,18 @@ WORKDIR /app
 COPY . .
 
 # -----------------------------------------------------------
-# STAGE 2: Backend dependencies
+# STAGE 2: Backend dependencies (CORREGIDO: WORKDIR a /app)
 # -----------------------------------------------------------
-WORKDIR /app/backend
-# Instalar dependencias definidas en pyproject.toml
+WORKDIR /app
+# Instalar dependencias definidas en pyproject.toml (Ahora encontrado en /app)
 RUN poetry install --no-root --no-interaction --no-ansi
 
 # -----------------------------------------------------------
-# STAGE 3: Configuración final
+# STAGE 3: Configuración final (CORREGIDO: WORKDIR a /app)
 # -----------------------------------------------------------
-WORKDIR /app/backend
+WORKDIR /app
 EXPOSE 8000
 
 # Ejecutar FastAPI usando Uvicorn dentro del virtualenv de Poetry
-
+# Nota: PYTHONPATH se usa para asegurar que 'main.py' (que está en /app) sea importable.
 CMD ["sh", "-c", "export PYTHONPATH=$PYTHONPATH:.; poetry run uvicorn main:app --host 0.0.0.0 --port 8000"]
