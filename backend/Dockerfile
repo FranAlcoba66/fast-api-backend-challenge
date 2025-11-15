@@ -37,4 +37,4 @@ EXPOSE 8000
 
 # Ejecutar FastAPI usando Uvicorn dentro del virtualenv de Poetry
 
-CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "export PYTHONPATH=$PYTHONPATH:.; poetry run uvicorn main:app --host 0.0.0.0 --port 8000"]
